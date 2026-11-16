@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>INCHARA CAB - Invoice Generator</title>
+  <style>
+    :root {
+      --bg: #eef1f5;
+      --panel: #ffffff;
+      --border: #d4dbe4;
+      --primary: #1a4d8f;
+      --danger: #c62828;
+      --danger-bg: #fdecea;
+      --text: #1e293b;
+      --muted: #64748b;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+    button, a.btn {
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: rgba(37, 99, 235, 0.25);
+      user-select: none;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 12px 16px;
+      background: #0f172a;
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.14);
+    }
+    .topbar h1 { margin: 0; font-size: 16px; font-weight: 700; }
+    .topbar span { font-size: 12px; color: #94a3b8; }
+
+    .mobile-tabs {
+      display: none;
+      background: #fff;
+      border-bottom: 1px solid var(--border);
+      padding: 8px 12px;
+      gap: 8px;
+    }
+    .mobile-tab-btn {
+      flex: 1;
+      padding: 10px 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      background: #f8fafc;
+      color: #334155;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .mobile-tab-btn.active {
+      background: #0f172a;
+      color: #fff;
+      border-color: #0f172a;
+    }
+
+    .btn {
+      border: none;
+      border-radius: 6px;
+      padding: 10px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .btn:active { transform: scale(0.98); }
+    .btn-primary { background: #2563eb; color: #fff; }
+    .btn-primary:hover { background: #1d4ed8; }
+    .btn-outline { background: #fff; color: #334155; border: 1px solid #cbd5e1; padding: 6px 10px; font-size: 12px; }
+    .btn-add { background: var(--primary); color: #fff; padding: 7px 12px; font-size: 12px; }
+    .btn-remove { background: var(--danger-bg); color: var(--danger); padding: 5px 10px; font-size: 12px; border: 1px solid #f5c2c0; }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: 490px 1fr;
+      gap: 20px;
+      padding: 16px;
+      align-items: start;
+      max-width: 1650px;
+      margin: 0 auto;
+    }
+    .editor-panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      box-shadow: 0 2px 10px rgba(15,23,42,0.05);
+      max-height: calc(100vh - 94px);
+      overflow-y: auto;
+    }
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin: 0 0 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+    .section-header h2 {
+      margin: 0;
+      font-size: 14px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: #0f172a;
+    }
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px 12px;
+      margin-bottom: 20px;
+    }
+    .field { display: flex; flex-direction: column; gap: 4px; }
+    .field label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; }
+    .field input, .field textarea {
+      width: 100%;
+      padding: 8px 10px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      font-size: 14px;
+      font-family: inherit;
+      color: #0f172a;
+      background: #fff;
+    }
+    .field input:focus, .field textarea:focus {
+      outline: none;
+      border-color: #2563eb;
+      box-shadow: 0 0 0 2px rgba(37,99,235,0.15);
+    }
+
+    .trip-cards { display: flex; flex-direction: column; gap: 12px; }
+    .trip-card {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      background: #f8fafc;
+    }
+    .trip-card-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .trip-card-top span { font-size: 12px; font-weight: 700; color: #334155; }
+    .trip-card-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .trip-card-grid .span-2 { grid-column: span 2; }
+    .trip-card textarea { resize: vertical; min-height: 54px; line-height: 1.3; }
+
+    .summary-strip {
+      margin-top: 16px;
+      padding: 12px;
+      background: #f1f5f9;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      font-size: 13px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .preview-panel {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      overflow-x: auto;
+      padding-bottom: 24px;
+    }
+    .preview-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+      margin-bottom: 10px;
+      text-transform: uppercase;
+    }
+    .a4-scale-wrapper { transform-origin: top center; }
+
+    /* A4 Invoice Sheet */
+    .invoice-sheet {
+      width: 210mm;
+      min-height: 297mm;
+      background: #fff;
+      padding: 18mm 14mm;
+      color: #111;
+      font-family: "Calibri", "Carlito", "Segoe UI", Arial, sans-serif;
+      box-shadow: 0 8px 28px rgba(15,23,42,0.14);
+    }
+    .inv-header { text-align: center; color: #000; margin-bottom: 16px; }
+    .inv-company { font-size: 16pt; font-weight: 700; text-transform: uppercase; margin: 0 0 4px; line-height: 1.2; }
+    .inv-subtitle, .inv-address { font-size: 8.5pt; font-weight: 700; text-transform: uppercase; margin: 0 0 4px; line-height: 1.3; }
+    .inv-address { margin-bottom: 0; }
+
+    .inv-meta {
+      display: grid;
+      grid-template-columns: 60% 40%;
+      column-gap: 10px;
+      row-gap: 7px;
+      font-size: 8.5pt;
+      line-height: 1.35;
+      margin-bottom: 12px;
+    }
+    .inv-meta-item { word-break: break-word; }
+    .inv-meta-label, .inv-meta-value-upper { text-transform: uppercase; }
+
+    .inv-table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+      font-size: 8.5pt;
+    }
+    .inv-table th, .inv-table td {
+      border: 1px solid #222;
+      padding: 5px 4px;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+    }
+    .inv-table thead th {
+      font-weight: 400;
+      text-align: center;
+      vertical-align: top;
+      text-transform: uppercase;
+      line-height: 1.25;
+      padding-bottom: 8px;
+    }
+    .inv-table tbody tr.trip-row td {
+      text-align: center;
+      vertical-align: top;
+      line-height: 1.3;
+      padding: 6px 4px 10px;
+      white-space: pre-line;
+      text-transform: uppercase;
+    }
+    .inv-table tbody tr.trip-row td.col-total-amount { text-transform: none; }
+    .inv-table td.in-words-cell { text-align: left; vertical-align: middle; padding: 12px 8px; text-transform: uppercase; }
+    .inv-table td.summary-label-cell { text-align: center; vertical-align: middle; text-transform: uppercase; }
+    .inv-table td.summary-value-cell { text-align: center; vertical-align: middle; }
+    .inv-table td.grand-total-cell { text-align: center; vertical-align: middle; padding: 8px 4px 12px; }
+    .gt-title { text-transform: uppercase; margin-bottom: 10px; }
+
+    .col-w-date { width: 11%; } .col-w-desc { width: 15%; } .col-w-kmhr { width: 9%; }
+    .col-w-amt1 { width: 11%; } .col-w-ex1 { width: 9%; } .col-w-amt2 { width: 10%; }
+    .col-w-ex2 { width: 9%; } .col-w-amt3 { width: 10%; } .col-w-total { width: 16%; }
+
+    @media (max-width: 1280px) { .workspace { grid-template-columns: 420px 1fr; } }
+    @media (max-width: 1040px) {
+      .mobile-tabs { display: flex; }
+      .workspace { grid-template-columns: 1fr; padding: 12px; }
+      .editor-panel { max-height: none; }
+      .workspace[data-mobile-view="form"] .preview-panel { display: none; }
+      .workspace[data-mobile-view="preview"] .editor-panel { display: none; }
+    }
+    @media (max-width: 640px) {
+      .form-grid { grid-template-columns: 1fr; }
+      .trip-card-grid { grid-template-columns: 1fr 1fr; }
+      .trip-card-grid .span-2 { grid-column: span 2; }
+      .field input, .field textarea { font-size: 16px; }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="topbar">
+    <div>
+      <h1>INCHARA CAB — Invoice</h1>
+      <span>Fill Details &amp; Tap Download</span>
+    </div>
+    <a id="downloadPdfBtn" class="btn btn-primary" href="#" download="INCHARA_CAB_Invoice.pdf">Download as PDF</a>
+  </header>
+
+  <nav class="mobile-tabs">
+    <button type="button" class="mobile-tab-btn active" data-tab="form">1. Enter Details</button>
+    <button type="button" class="mobile-tab-btn" data-tab="preview">2. Preview Invoice</button>
+  </nav>
+
+  <main id="workspace" class="workspace" data-mobile-view="form">
+    <section class="editor-panel">
+      <div class="section-header">
+        <h2>Invoice Details</h2>
+        <button type="button" id="clearAllBtn" class="btn btn-outline">Clear All</button>
+      </div>
+
+      <div class="form-grid" id="metaFormGrid">
+        <div class="field"><label for="inVehicleNo">Vehicle No</label><input type="text" id="inVehicleNo" value="" placeholder="e.g. KA03AL6461" /></div>
+        <div class="field"><label for="inWeb">Web</label><input type="text" id="inWeb" value="" placeholder="e.g. incharacab.com" /></div>
+        <div class="field"><label for="inClassOfVehicle">Class of Vehicle</label><input type="text" id="inClassOfVehicle" value="" placeholder="e.g. INNOVA CRYSTA" /></div>
+        <div class="field"><label for="inOfficeMobile">Office Mobile</label><input type="tel" id="inOfficeMobile" value="" placeholder="e.g. 9845211281" /></div>
+        <div class="field"><label for="inUserName">User Name</label><input type="text" id="inUserName" value="" placeholder="e.g. MR. SANDEEP DATTA" /></div>
+        <div class="field"><label for="inDate">Date (DD/MM/YY)</label><input type="text" id="inDate" value="" placeholder="DD/MM/YY" /></div>
+        <div class="field"><label for="inClientName">Client Name</label><input type="text" id="inClientName" value="" placeholder="e.g. BANNERGHATTA ROAD" /></div>
+        <div class="field"><label for="inInvoiceNo">Invoice No</label><input type="text" id="inInvoiceNo" value="" placeholder="e.g. 232" /></div>
+      </div>
+
+      <div class="section-header">
+        <h2>Trip Details</h2>
+        <button type="button" id="addRowBtn" class="btn btn-add">+ Add Row</button>
+      </div>
+
+      <div id="tripCardsContainer" class="trip-cards"></div>
+
+      <div class="summary-strip">
+        <div><strong>Total Amount:</strong> <span id="editorTotalText">Rs.0</span></div>
+        <div><strong>Amount in Words:</strong> <span id="editorWordsText">IN WORDS: RUPEES ZERO ONLY.</span></div>
+      </div>
+    </section>
+
+    <section class="preview-panel">
+      <div class="preview-label">Live A4 Preview</div>
+      <div id="scaleWrapper" class="a4-scale-wrapper">
+        <div id="invoiceSheet" class="invoice-sheet">
+          <div class="inv-header">
+            <h1 class="inv-company">INCHARA CAB</h1>
+            <p class="inv-subtitle">ALL KINDS OF A/C &amp; NON-A/C VEHICLES AVAILABLE AROUND THE CLOCK</p>
+            <p class="inv-address">KOTHNUR MAIN ROAD, 8TH PHASE, JP NAGAR BENGALURU</p>
+          </div>
+
+          <div class="inv-meta">
+            <div class="inv-meta-item"><span class="inv-meta-label">VEHICLE NO: </span><span id="outVehicleNo" class="inv-meta-value-upper"></span></div>
+            <div class="inv-meta-item"><span class="inv-meta-label">WEB: </span><span id="outWeb"></span></div>
+            <div class="inv-meta-item"><span class="inv-meta-label">CLASS OF VEHICLE: </span><span id="outClassOfVehicle" class="inv-meta-value-upper"></span></div>
+            <div class="inv-meta-item"><span class="inv-meta-label">OFFICE MOBILE: </span><span id="outOfficeMobile"></span></div>
+            <div class="inv-meta-item"><span class="inv-meta-label">USER NAME: </span><span id="outUserName" class="inv-meta-value-upper"></span></div>
+            <div class="inv-meta-item"><span class="inv-meta-label">DATE: </span><span id="outDate"></span></div>
+            <div class="inv-meta-item"><span class="inv-meta-label">CLIENT NAME: </span><span id="outClientName" class="inv-meta-value-upper"></span></div>
+            <div class="inv-meta-item"><span class="inv-meta-label">INVOICE NO: </span><span id="outInvoiceNo" class="inv-meta-value-upper"></span></div>
+          </div>
+
+          <table class="inv-table">
+            <colgroup>
+              <col class="col-w-date" /><col class="col-w-desc" /><col class="col-w-kmhr" />
+              <col class="col-w-amt1" /><col class="col-w-ex1" /><col class="col-w-amt2" />
+              <col class="col-w-ex2" /><col class="col-w-amt3" /><col class="col-w-total" />
+            </colgroup>
+            <thead>
+              <tr>
+                <th>TRIP DATE</th><th>DESCRIPTION</th><th>KM/HR</th><th>AMOUNT</th>
+                <th>EXTRA<br />KM</th><th>AMOUNT</th><th>EXTRA<br />KM</th><th>AMOUNT</th><th>TOTAL<br />AMOUNT</th>
+              </tr>
+            </thead>
+            <tbody id="invoiceTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    (function () {
+      const META_IDS = ["inVehicleNo","inWeb","inClassOfVehicle","inOfficeMobile","inUserName","inDate","inClientName","inInvoiceNo"];
+      const createEmptyRow = () => ({ tripDate:"", description:"", kmHr:"", amount1:"", extraKm1:"", amount2:"", extraKm2:"", amount3:"", totalAmount:"" });
+
+      let tripRows = [createEmptyRow()];
+      let activeBlobUrl = null;
+
+      const escapeHtml = (s) => String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+      const parseAmount = (v) => { const n = parseFloat(String(v ?? "").replace(/[^0-9.]/g, "")); return Number.isFinite(n) ? n : 0; };
+      const cellOrDash = (v) => String(v ?? "").trim() === "" ? "-" : escapeHtml(v);
+      const rawOrDash = (v) => String(v ?? "").trim() === "" ? "-" : String(v);
+
+      function formatRupees(num) {
+        if (!Number.isFinite(num)) return "Rs.0";
+        const dec = Math.abs(num % 1) > 0.001;
+        return "Rs." + num.toLocaleString("en-IN", { minimumFractionDigits: dec ? 2 : 0, maximumFractionDigits: 2 });
+      }
+
+      function numberToIndianWords(num) {
+        const ones = ["","ONE","TWO","THREE","FOUR","FIVE","SIX","SEVEN","EIGHT","NINE","TEN","ELEVEN","TWELVE","THIRTEEN","FOURTEEN","FIFTEEN","SIXTEEN","SEVENTEEN","EIGHTEEN","NINETEEN"];
+        const tens = ["","","TWENTY","THIRTY","FORTY","FIFTY","SIXTY","SEVENTY","EIGHTY","NINETY"];
+        const twoDigits = (n) => n === 0 ? "" : n < 20 ? ones[n] : (n % 10 === 0 ? tens[Math.floor(n/10)] : `${tens[Math.floor(n/10)]}-${ones[n%10]}`);
+        const threeDigits = (n) => [Math.floor(n/100) > 0 ? `${ones[Math.floor(n/100)]} HUNDRED` : "", twoDigits(n%100)].filter(Boolean).join(" ");
+        function intWords(n) {
+          if (n === 0) return "ZERO";
+          const parts = [];
+          const cr = Math.floor(n / 10000000); n %= 10000000;
+          const lk = Math.floor(n / 100000); n %= 100000;
+          const th = Math.floor(n / 1000); n %= 1000;
+          if (cr > 0) parts.push(`${intWords(cr)} CRORE`);
+          if (lk > 0) parts.push(`${twoDigits(lk)} LAKH`);
+          if (th > 0) parts.push(`${twoDigits(th)} THOUSAND`);
+          if (n > 0) parts.push(threeDigits(n));
+          return parts.join(" ");
+        }
+        const rounded = Math.round((num + Number.EPSILON) * 100) / 100;
+        const whole = Math.floor(rounded);
+        const paise = Math.round((rounded - whole) * 100);
+        return `IN WORDS: RUPEES ${intWords(whole)}${paise > 0 ? ` AND ${twoDigits(paise)} PAISE` : ""} ONLY.`;
+      }
+
+      function getInvoiceData() {
+        const val = (id) => document.getElementById(id).value.trim();
+        const meta = {
+          vehicleNo: val("inVehicleNo").toUpperCase(),
+          web: val("inWeb"),
+          classOfVehicle: val("inClassOfVehicle").toUpperCase(),
+          officeMobile: val("inOfficeMobile"),
+          userName: val("inUserName").toUpperCase(),
+          date: val("inDate"),
+          clientName: val("inClientName").toUpperCase(),
+          invoiceNo: val("inInvoiceNo").toUpperCase()
+        };
+        let grandTotal = 0;
+        const rows = tripRows.map((r) => {
+          const n = parseAmount(r.totalAmount);
+          grandTotal += n;
+          return {
+            tripDate: rawOrDash(r.tripDate).toUpperCase(),
+            description: rawOrDash(r.description).toUpperCase(),
+            kmHr: rawOrDash(r.kmHr).toUpperCase(),
+            amount1: rawOrDash(r.amount1).toUpperCase().replace(/\bRS\./g, "Rs."),
+            extraKm1: rawOrDash(r.extraKm1).toUpperCase(),
+            amount2: rawOrDash(r.amount2).toUpperCase(),
+            extraKm2: rawOrDash(r.extraKm2).toUpperCase(),
+            amount3: rawOrDash(r.amount3).toUpperCase(),
+            totalAmount: String(r.totalAmount ?? "").trim() === "" ? "-" : formatRupees(n)
+          };
+        });
+        return { meta, rows, formattedTotal: formatRupees(grandTotal), amountInWords: numberToIndianWords(grandTotal) };
+      }
+
+      function buildVectorPdfBytes(data) {
+        const MM = 72 / 25.4, pW = 595.28, pH = 841.89;
+        const sanitize = (s) => String(s ?? "").replace(/[\u2013\u2014]/g, "-").replace(/[^\x20-\x7E\r\n]/g, " ");
+        const pdfEsc = (s) => sanitize(s).replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)");
+
+        function charWidthEm(ch, bold) {
+          if (ch === " " || "iIlj!|.,:;'`".includes(ch)) return 0.278;
+          if ("frt()[]{}-/\\\"".includes(ch)) return 0.35;
+          if ("MW".includes(ch)) return bold ? 0.92 : 0.88;
+          if ("mw".includes(ch)) return 0.78;
+          if (ch >= "A" && ch <= "Z") return bold ? 0.72 : 0.67;
+          if (ch >= "0" && ch <= "9") return 0.556;
+          return bold ? 0.56 : 0.52;
+        }
+
+        function textWidthMm(str, fontSizePt, bold) {
+          let sum = 0;
+          for (let i = 0; i < str.length; i++) sum += charWidthEm(str[i], bold);
+          return (sum * fontSizePt) / MM;
+        }
+
+        function wrapToWidthMm(text, maxWidthMm, fontSizePt, bold) {
+          const paragraphs = sanitize(text).split(/\r?\n/);
+          const out = [];
+          paragraphs.forEach((p) => {
+            const words = p.trim().split(/\s+/);
+            if (!words[0]) { out.push(""); return; }
+            let line = "";
+            words.forEach((w) => {
+              const cand = line ? line + " " + w : w;
+              if (textWidthMm(cand, fontSizePt, bold) <= maxWidthMm) {
+                line = cand;
+              } else {
+                if (line) out.push(line);
+                if (textWidthMm(w, fontSizePt, bold) <= maxWidthMm) {
+                  line = w;
+                } else {
+                  let chunk = "";
+                  for (const ch of w) {
+                    if (textWidthMm(chunk + ch, fontSizePt, bold) <= maxWidthMm) chunk += ch;
+                    else { if (chunk) out.push(chunk); chunk = ch; }
+                  }
+                  line = chunk;
+                }
+              }
+            });
+            if (line) out.push(line);
+          });
+          return out.length ? out : ["-"];
+        }
+
+        const pages = [[]];
+        let cmds = pages[0], y = 20;
+
+        function drawText(str, xMm, yMm, sizePt, bold, align) {
+          const s = sanitize(str);
+          const font = bold ? "/F2" : "/F1";
+          const dx = align === "center" ? xMm - textWidthMm(s, sizePt, bold) / 2 : xMm;
+          cmds.push(`BT ${font} ${sizePt} Tf ${(dx * MM).toFixed(2)} ${(pH - yMm * MM).toFixed(2)} Td (${pdfEsc(s)}) Tj ET`);
+        }
+
+        function drawRect(xMm, yMm, wMm, hMm) {
+          cmds.push(`0.75 w 0.13 0.13 0.13 RG ${(xMm * MM).toFixed(2)} ${(pH - (yMm + hMm) * MM).toFixed(2)} ${(wMm * MM).toFixed(2)} ${(hMm * MM).toFixed(2)} re S`);
+        }
+
+        drawText("INCHARA CAB", 105, y, 15.5, true, "center"); y += 5.5;
+        drawText("ALL KINDS OF A/C & NON-A/C VEHICLES AVAILABLE AROUND THE CLOCK", 105, y, 8.5, true, "center"); y += 4.5;
+        drawText("KOTHNUR MAIN ROAD, 8TH PHASE, JP NAGAR BENGALURU", 105, y, 8.5, true, "center"); y += 9;
+
+        [
+          [`VEHICLE NO: ${data.meta.vehicleNo}`, `WEB: ${data.meta.web}`],
+          [`CLASS OF VEHICLE: ${data.meta.classOfVehicle}`, `OFFICE MOBILE: ${data.meta.officeMobile}`],
+          [`USER NAME: ${data.meta.userName}`, `DATE: ${data.meta.date}`],
+          [`CLIENT NAME: ${data.meta.clientName}`, `INVOICE NO: ${data.meta.invoiceNo}`]
+        ].forEach(([l, r]) => {
+          const ll = wrapToWidthMm(l, 102, 8.5, false);
+          const rl = wrapToWidthMm(r, 71, 8.5, false);
+          ll.forEach((ln, i) => drawText(ln, 14, y + i * 4.2, 8.5, false, "left"));
+          rl.forEach((ln, i) => drawText(ln, 123, y + i * 4.2, 8.5, false, "left"));
+          y += Math.max(ll.length, rl.length) * 4.2 + 1.5;
+        });
+        y += 3;
+
+        const cw = [20, 27.5, 16.5, 20, 16.5, 18, 16.5, 18, 29];
+        const cx = [];
+        let cur = 14;
+        cw.forEach((w) => { cx.push(cur); cur += w; });
+        const hdr = [["TRIP DATE"],["DESCRIPTION"],["KM/HR"],["AMOUNT"],["EXTRA","KM"],["AMOUNT"],["EXTRA","KM"],["AMOUNT"],["TOTAL","AMOUNT"]];
+
+        function drawHeader() {
+          for (let i = 0; i < 9; i++) {
+            drawRect(cx[i], y, cw[i], 11.5);
+            let ty = y + 4.3;
+            hdr[i].forEach((ln) => { drawText(ln, cx[i] + cw[i] / 2, ty, 8.1, false, "center"); ty += 3.6; });
+          }
+          y += 11.5;
+        }
+        drawHeader();
+
+        data.rows.forEach((r) => {
+          const vs = [r.tripDate, r.description, r.kmHr, r.amount1, r.extraKm1, r.amount2, r.extraKm2, r.amount3, r.totalAmount];
+          const wr = vs.map((v, i) => wrapToWidthMm(v, cw[i] - 2.4, 8.3, false));
+          const rh = Math.max(10.5, Math.max(...wr.map((w) => w.length)) * 3.8 + 4.5);
+          if (y + rh > 280) { cmds = []; pages.push(cmds); y = 18; drawHeader(); }
+          for (let i = 0; i < 9; i++) {
+            drawRect(cx[i], y, cw[i], rh);
+            let ty = y + 4.4;
+            wr[i].forEach((ln) => { drawText(ln, cx[i] + cw[i] / 2, ty, 8.3, false, "center"); ty += 3.8; });
+          }
+          y += rh;
+        });
+
+        const wl = wrapToWidthMm(data.amountInWords, 129, 8.4, false);
+        const tH = 7.5;
+        const gH = Math.max(15.5, wl.length * 4 + 6 - tH);
+        const sH = tH + gH;
+        if (y + sH > 280) { cmds = []; pages.push(cmds); y = 18; }
+
+        drawRect(14, y, 135, sH);
+        let wy = y + (sH - wl.length * 4) / 2 + 2.8;
+        wl.forEach((ln) => { drawText(ln, 17, wy, 8.4, false, "left"); wy += 4; });
+
+        drawRect(cx[7], y, cw[7], tH);
+        drawText("TOTAL", cx[7] + cw[7] / 2, y + tH / 2 + 1.1, 8.3, false, "center");
+        drawRect(cx[8], y, cw[8], tH);
+        drawText(data.formattedTotal, cx[8] + cw[8] / 2, y + tH / 2 + 1.1, 8.3, false, "center");
+
+        const gtY = y + tH, gtW = cw[7] + cw[8];
+        drawRect(cx[7], gtY, gtW, gH);
+        drawText("GRAND TOTAL", cx[7] + gtW / 2, gtY + gH / 2 - 1.2, 8.3, false, "center");
+        drawText(data.formattedTotal, cx[7] + gtW / 2, gtY + gH / 2 + 4.0, 8.3, false, "center");
+
+        const objs = [
+          "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n",
+          "",
+          "3 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n",
+          "4 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>\nendobj\n"
+        ];
+        const kids = [];
+        let id = 5;
+        pages.forEach((pc) => {
+          const st = pc.join("\n"), cid = id++, pid = id++;
+          kids.push(`${pid} 0 R`);
+          objs.push(`${cid} 0 obj\n<< /Length ${st.length} >>\nstream\n${st}\nendstream\nendobj\n`);
+          objs.push(`${pid} 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pW} ${pH}] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents ${cid} 0 R >>\nendobj\n`);
+        });
+        objs[1] = `2 0 obj\n<< /Type /Pages /Kids [${kids.join(" ")}] /Count ${kids.length} >>\nendobj\n`;
+
+        let pdf = "%PDF-1.4\n";
+        const off = [0];
+        objs.forEach((o) => { off.push(pdf.length); pdf += o; });
+        const xref = pdf.length;
+        pdf += `xref\n0 ${objs.length + 1}\n0000000000 65535 f \n`;
+        for (let i = 1; i <= objs.length; i++) pdf += String(off[i]).padStart(10, "0") + " 00000 n \n";
+        pdf += `trailer\n<< /Size ${objs.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`;
+
+        const bytes = new Uint8Array(pdf.length);
+        for (let i = 0; i < pdf.length; i++) bytes[i] = pdf.charCodeAt(i) & 0xff;
+        return bytes;
+      }
+
+      function bytesToDataUri(bytes) {
+        let bin = "";
+        const chunk = 0x8000;
+        for (let i = 0; i < bytes.length; i += chunk) {
+          bin += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+        }
+        return "data:application/pdf;base64," + btoa(bin);
+      }
+
+      // Pre-populate the <a download> href live whenever data changes
+      function updateDownloadLink(data) {
+        const anchor = document.getElementById("downloadPdfBtn");
+        const inv = (data.meta.invoiceNo || "").replace(/[^a-zA-Z0-9_-]/g, "_");
+        const filename = inv ? `INCHARA_CAB_Invoice_${inv}.pdf` : "INCHARA_CAB_Invoice.pdf";
+        const pdfBytes = buildVectorPdfBytes(data);
+
+        const isAndroidWebView = /; wv\)/i.test(navigator.userAgent);
+        if (isAndroidWebView) {
+          anchor.href = bytesToDataUri(pdfBytes);
+        } else {
+          if (activeBlobUrl) {
+            const oldUrl = activeBlobUrl;
+            setTimeout(() => URL.revokeObjectURL(oldUrl), 60000);
+          }
+          // application/octet-stream forces mobile browsers (iOS Safari & Chrome) to download to storage instead of opening inline
+          const blob = new Blob([pdfBytes], { type: "application/octet-stream" });
+          activeBlobUrl = URL.createObjectURL(blob);
+          anchor.href = activeBlobUrl;
+        }
+        anchor.download = filename;
+        anchor.setAttribute("download", filename);
+      }
+
+      function renderTripEditorCards() {
+        document.getElementById("tripCardsContainer").innerHTML = tripRows.map((row, idx) => `
+          <div class="trip-card">
+            <div class="trip-card-top">
+              <span>Trip Row #${idx + 1}</span>
+              <button type="button" class="btn btn-remove" data-action="remove-row" data-index="${idx}">Remove</button>
+            </div>
+            <div class="trip-card-grid">
+              <div class="field"><label>Trip Date</label><input type="text" data-field="tripDate" data-index="${idx}" value="${escapeHtml(row.tripDate)}" placeholder="DD/MM/YY" /></div>
+              <div class="field span-2"><label>Description</label><textarea data-field="description" data-index="${idx}" placeholder="e.g. BANGALORE LOCAL USE">${escapeHtml(row.description)}</textarea></div>
+              <div class="field"><label>KM/HR</label><input type="text" data-field="kmHr" data-index="${idx}" value="${escapeHtml(row.kmHr)}" placeholder="-" /></div>
+              <div class="field span-2"><label>Amount (Multi-line)</label><textarea data-field="amount1" data-index="${idx}" placeholder="e.g. 2700 +&#10;Rs.185&#10;TOLL">${escapeHtml(row.amount1)}</textarea></div>
+              <div class="field"><label>Extra KM</label><input type="text" data-field="extraKm1" data-index="${idx}" value="${escapeHtml(row.extraKm1)}" placeholder="-" /></div>
+              <div class="field"><label>Amount</label><input type="text" data-field="amount2" data-index="${idx}" value="${escapeHtml(row.amount2)}" placeholder="-" /></div>
+              <div class="field"><label>Extra KM</label><input type="text" data-field="extraKm2" data-index="${idx}" value="${escapeHtml(row.extraKm2)}" placeholder="-" /></div>
+              <div class="field"><label>Amount</label><input type="text" data-field="amount3" data-index="${idx}" value="${escapeHtml(row.amount3)}" placeholder="-" /></div>
+              <div class="field span-2"><label>Total Amount</label><input type="text" inputmode="decimal" data-field="totalAmount" data-index="${idx}" value="${escapeHtml(row.totalAmount)}" placeholder="e.g. 2885" /></div>
+            </div>
+          </div>
+        `).join("");
+      }
+
+      function renderPreview() {
+        [
+          ["inVehicleNo","outVehicleNo"],["inWeb","outWeb"],["inClassOfVehicle","outClassOfVehicle"],
+          ["inOfficeMobile","outOfficeMobile"],["inUserName","outUserName"],["inDate","outDate"],
+          ["inClientName","outClientName"],["inInvoiceNo","outInvoiceNo"]
+        ].forEach(([i, o]) => { document.getElementById(o).textContent = document.getElementById(i).value; });
+
+        let grandTotal = 0;
+        const rowsHtml = tripRows.map((row) => {
+          const n = parseAmount(row.totalAmount);
+          grandTotal += n;
+          const totalTxt = String(row.totalAmount ?? "").trim() === "" ? "-" : formatRupees(n);
+          return `<tr class="trip-row">
+            <td>${cellOrDash(row.tripDate)}</td><td>${cellOrDash(row.description)}</td><td>${cellOrDash(row.kmHr)}</td>
+            <td>${cellOrDash(row.amount1)}</td><td>${cellOrDash(row.extraKm1)}</td><td>${cellOrDash(row.amount2)}</td>
+            <td>${cellOrDash(row.extraKm2)}</td><td>${cellOrDash(row.amount3)}</td><td class="col-total-amount">${totalTxt}</td>
+          </tr>`;
+        }).join("");
+
+        const formattedTotal = formatRupees(grandTotal);
+        const words = numberToIndianWords(grandTotal);
+        document.getElementById("invoiceTableBody").innerHTML = rowsHtml + `
+          <tr>
+            <td colspan="7" rowspan="2" class="in-words-cell">${escapeHtml(words)}</td>
+            <td class="summary-label-cell">TOTAL</td>
+            <td class="summary-value-cell">${formattedTotal}</td>
+          </tr>
+          <tr>
+            <td colspan="2" class="grand-total-cell"><div class="gt-title">GRAND TOTAL</div><div class="gt-value">${formattedTotal}</div></td>
+          </tr>`;
+        document.getElementById("editorTotalText").textContent = formattedTotal;
+        document.getElementById("editorWordsText").textContent = words;
+
+        updateDownloadLink(getInvoiceData());
+        fitPreviewToViewport();
+      }
+
+      function fitPreviewToViewport() {
+        const panel = document.querySelector(".preview-panel");
+        const wrapper = document.getElementById("scaleWrapper");
+        const sheet = document.getElementById("invoiceSheet");
+        if (!panel || !wrapper || !sheet || panel.offsetParent === null) return;
+        wrapper.style.transform = "none";
+        wrapper.style.width = "auto";
+        wrapper.style.height = "auto";
+        const avail = panel.clientWidth - 16;
+        if (avail > 0 && sheet.offsetWidth > avail) {
+          const scale = avail / sheet.offsetWidth;
+          wrapper.style.transform = `scale(${scale})`;
+          wrapper.style.width = `${sheet.offsetWidth * scale}px`;
+          wrapper.style.height = `${sheet.offsetHeight * scale}px`;
+        }
+      }
+
+      function initApp() {
+        document.querySelectorAll(".mobile-tab-btn").forEach((btn) => {
+          btn.addEventListener("click", function () {
+            const view = this.getAttribute("data-tab");
+            document.getElementById("workspace").setAttribute("data-mobile-view", view);
+            document.querySelectorAll(".mobile-tab-btn").forEach((b) => b.classList.toggle("active", b === this));
+            if (view === "preview") fitPreviewToViewport();
+          });
+        });
+
+        document.getElementById("metaFormGrid").addEventListener("input", renderPreview);
+
+        const tripContainer = document.getElementById("tripCardsContainer");
+        tripContainer.addEventListener("input", (e) => {
+          const idx = Number(e.target.getAttribute("data-index"));
+          const field = e.target.getAttribute("data-field");
+          if (Number.isInteger(idx) && field && tripRows[idx]) {
+            tripRows[idx][field] = e.target.value;
+            renderPreview();
+          }
+        });
+
+        tripContainer.addEventListener("click", (e) => {
+          const btn = e.target.closest('[data-action="remove-row"]');
+          if (!btn) return;
+          const idx = Number(btn.getAttribute("data-index"));
+          if (tripRows.length === 1) tripRows[0] = createEmptyRow();
+          else tripRows.splice(idx, 1);
+          renderTripEditorCards();
+          renderPreview();
+        });
+
+        document.getElementById("addRowBtn").addEventListener("click", () => {
+          tripRows.push(createEmptyRow());
+          renderTripEditorCards();
+          renderPreview();
+        });
+
+        document.getElementById("clearAllBtn").addEventListener("click", () => {
+          META_IDS.forEach((id) => { document.getElementById(id).value = ""; });
+          tripRows = [createEmptyRow()];
+          renderTripEditorCards();
+          renderPreview();
+        });
+
+        document.getElementById("downloadPdfBtn").addEventListener("click", function () {
+          updateDownloadLink(getInvoiceData());
+          const btn = this;
+          btn.textContent = "Downloading...";
+          setTimeout(() => { btn.textContent = "Download as PDF"; }, 1800);
+        });
+
+        window.addEventListener("resize", fitPreviewToViewport);
+        renderTripEditorCards();
+        renderPreview();
+      }
+
+      if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", initApp);
+      else initApp();
+    })();
+  </script>
+</body>
+</html>

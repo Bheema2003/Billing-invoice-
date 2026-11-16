@@ -1,0 +1,6 @@
+{
+  "name": "INCHARA CAB — Invoice Generator",
+  "description": "A4 cab and fleet trip invoice generator with live preview and instant vector PDF download.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

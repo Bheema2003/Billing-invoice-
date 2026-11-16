@@ -1,0 +1,187 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    font-family: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background-color: #f1f5f9;
+    color: #0f172a;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  button,
+  a {
+    touch-action: manipulation;
+  }
+}
+
+.font-mono-tabular {
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Exact A4 Invoice Sheet */
+.invoice-sheet {
+  width: 210mm;
+  min-height: 297mm;
+  background: #ffffff;
+  padding: 18mm 14mm;
+  color: #111111;
+  font-family: "Calibri", "Carlito", "Segoe UI", Arial, sans-serif;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
+}
+
+.inv-header {
+  text-align: center;
+  color: #000000;
+  margin-bottom: 16px;
+}
+
+.inv-company {
+  font-size: 16pt;
+  font-weight: 700;
+  text-transform: uppercase;
+  margin: 0 0 4px;
+  line-height: 1.2;
+}
+
+.inv-subtitle,
+.inv-address {
+  font-size: 8.5pt;
+  font-weight: 700;
+  text-transform: uppercase;
+  margin: 0 0 4px;
+  line-height: 1.3;
+}
+
+.inv-address {
+  margin-bottom: 0;
+}
+
+.inv-meta {
+  display: grid;
+  grid-template-columns: 60% 40%;
+  column-gap: 10px;
+  row-gap: 7px;
+  font-size: 8.5pt;
+  line-height: 1.35;
+  margin-bottom: 12px;
+}
+
+.inv-meta-item {
+  word-break: break-word;
+}
+
+.inv-meta-label,
+.inv-meta-value-upper {
+  text-transform: uppercase;
+}
+
+.inv-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: 8.5pt;
+  font-variant-numeric: tabular-nums;
+}
+
+.inv-table th,
+.inv-table td {
+  border: 1px solid #222222;
+  padding: 5px 4px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.inv-table thead th {
+  font-weight: 400;
+  text-align: center;
+  vertical-align: top;
+  text-transform: uppercase;
+  line-height: 1.25;
+  padding-bottom: 8px;
+}
+
+.inv-table tbody tr.trip-row td {
+  text-align: center;
+  vertical-align: top;
+  line-height: 1.3;
+  padding: 6px 4px 10px;
+  white-space: pre-line;
+  text-transform: uppercase;
+}
+
+.inv-table tbody tr.trip-row td.col-total-amount {
+  text-transform: none;
+}
+
+.inv-table td.in-words-cell {
+  text-align: left;
+  vertical-align: middle;
+  padding: 12px 8px;
+  text-transform: uppercase;
+}
+
+.inv-table td.summary-label-cell {
+  text-align: center;
+  vertical-align: middle;
+  text-transform: uppercase;
+}
+
+.inv-table td.summary-value-cell {
+  text-align: center;
+  vertical-align: middle;
+}
+
+.inv-table td.grand-total-cell {
+  text-align: center;
+  vertical-align: middle;
+  padding: 8px 4px 12px;
+}
+
+.gt-title {
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.col-w-date {
+  width: 11%;
+}
+.col-w-desc {
+  width: 15%;
+}
+.col-w-kmhr {
+  width: 9%;
+}
+.col-w-amt1 {
+  width: 11%;
+}
+.col-w-ex1 {
+  width: 9%;
+}
+.col-w-amt2 {
+  width: 10%;
+}
+.col-w-ex2 {
+  width: 9%;
+}
+.col-w-amt3 {
+  width: 10%;
+}
+.col-w-total {
+  width: 16%;
+}
+
+@media print {
+  body {
+    background: #ffffff;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .invoice-sheet {
+    box-shadow: none;
+    margin: 0;
+  }
+}
